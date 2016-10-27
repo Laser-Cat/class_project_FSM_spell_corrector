@@ -8,7 +8,7 @@ cat_xfa_defines::cat_xfa_defines()
 char cat_xfa_defines::SPLITER='#';
 
 
-int cat_xfa_defines::NOT_FOUND=0;
+int cat_xfa_defines::NOT_FOUND=-100;
 
 int cat_xfa_defines::FOUND=1;
 

@@ -32,7 +32,7 @@ struct cat_automaton_op_dict
     map<int ,int > op_loc;
     int get_edges_loc(int op)
     {
-        if(op_loc.find(op)!=op_loc.end())
+        if(op_loc.find(op)==op_loc.end())
             return cat_xfa_defines::NOT_FOUND;
         else
             return op_loc[op];
@@ -93,7 +93,20 @@ struct cat_io_automaton_cell:public cat_automaton_node
     {
         set_ops(cat_xfa_defines::CMD_NULL,data);
     }
-
+    bool next(int op,vector<int> & next_ids,vector<int > &output)
+    {
+        if(!op_dict.find(op))
+        {
+            return false;
+        }
+        int edges_idx=op_dict.get_edges_loc(op);
+        cat_io_automaton_op& o=ops[edges_idx];
+        for(cat_automaton_edge& e:o.out_going_edges)
+        {
+            next_ids.push_back(e.next_node_id);
+            output.push_back(e.response);
+        }
+    }
     void collect(int op,vector<cat_automaton_edge>& ret)
     {
         if(op_dict.find(op))
@@ -124,18 +137,25 @@ struct cat_io_automaton
 
     }
 public:
-    cat_io_automaton();
+    cat_io_automaton()
+    {
+        node_count=0;
+        start_stat_id=0;
+    }
 
     cat_io_automaton operator |(const cat_io_automaton& m)const
     {
         cat_io_automaton ret_fsm;
         cat_io_automaton_cell cell;
     }
-    void add_node()
+    int add_node()
     {
         cat_io_automaton_cell node;
         node.id=node_count;
+        node_count++;
+
         nodes.push_back(node);
+        return node.id;
     }
     void set_accept(int node_id)
     {
@@ -176,7 +196,14 @@ struct automaton_process_state_hash
     int processed_length;
     int hash_base;
     int output_size;
+    automaton_process_state_hash()
+    {
+        hash=0;
+        processed_length=0;
+        hash_base=137;
+        output_size=0;
 
+    }
     bool operator <(const automaton_process_state_hash& n)const
     {
         if(processed_length!=n.processed_length)
@@ -235,6 +262,8 @@ struct automaton_process_state
         automaton_process_state s=*this;
         if(character!=cat_xfa_defines::CMD_NULL)
         s.output_str.push_back(character);
+        return s;
+
     }
 };
 struct automaton_node_state
@@ -270,39 +299,51 @@ class cat_io_automaton_searcher
     vector <automaton_node_state> states[2];
     cat_io_automaton machine;
     int current,next;
+public:
+    cat_io_automaton*  get_machine()
+    {
+        return &machine;
+    }
 
     void set_automaton(cat_io_automaton& m)
     {
         this->machine=m;
+
         states[0].resize(m.node_count);
         states[1].resize(m.node_count);
     }
     //call with topology order pls;
+    bool next_(int node_id,int character,vector<int > &next_stats,vector<int >& outputs)
+    {
+       cat_io_automaton_cell&n= machine.nodes[node_id];
+       return n.next(character,next_stats,outputs);
+    }
+
     void process_trans(int node_id,int charcter)
     {
-        vector<cat_automaton_edge > next_edges;
-        cat_io_automaton_cell& n=machine.nodes[node_id];
-        automaton_node_state &current_node_status=states[current][node_id];
-
-        for(int i=0;i<next_edges.size();i++)
-        {
-            cat_automaton_edge&e=next_edges[i];
-            int target_stat=(e.process_length==0);
-            for(int i=0;i<current_node_status.states.size();i++)
-            {
-                automaton_process_state& current_process_state=current_node_status.states[i];
-                automaton_process_state_hash&  current_process_state_hash=current_node_status.hashs[i];
-
-                automaton_node_state &next_node_status=states[target_stat][e.next_node_id];
-                automaton_process_state_hash next_hash=current_process_state_hash.grow(charcter);
-                if(next_node_status.has_state(next_hash))
-                {
-                    continue;
-                }
-                next_node_status.add_state(next_hash,current_process_state.grow(charcter));
-            }
-        }
+       vector<int > next_nodes;
+       vector<int > outputs;
+       next_(node_id,charcter,next_nodes,outputs);
+       int target_stat=(charcter==cat_xfa_defines::CMD_NULL);
+       target_stat=next^target_stat;
+       automaton_node_state & current_node_status=states[current][node_id];
+       for(int sid=0;sid<current_node_status.states.size();sid++)
+       {
+           automaton_process_state& current_process_state=current_node_status.states[sid];
+           automaton_process_state_hash&  current_process_state_hash=current_node_status.hashs[sid];
+           for(int i=0;i<next_nodes.size();i++)
+           {
+               automaton_process_state_hash next_hash=current_process_state_hash.grow(outputs[i]);
+               automaton_node_state &next_node_status=states[target_stat][next_nodes[i]];
+               if(next_node_status.has_state(next_hash))
+               {
+                   continue;
+               }
+               next_node_status.add_state(next_hash,current_process_state.grow(outputs[i]));
+           }
+       }
     }
+
     void collect(set<int >& output_hash,vector<vector<int > >&outputs)
     {
         for(int t:machine.accept_nodes)
@@ -320,12 +361,24 @@ class cat_io_automaton_searcher
              }
         }
     }
-    void process_trans(int character)
+
+    void process_trans_null()
     {
         for(int i=0;i<machine.node_count;i++)
         {
-            if(character!=cat_xfa_defines::CMD_NULL)
             process_trans(i,cat_xfa_defines::CMD_NULL);
+        }
+    }
+    void process_trans(int character)
+    {
+        if(character!=cat_xfa_defines::CMD_NULL)
+        for(int i=0;i<machine.node_count;i++)
+        {
+            process_trans(i,cat_xfa_defines::CMD_NULL);
+        }
+
+        for(int i=0;i<machine.node_count;i++)
+        {
             process_trans(i,character);
         }
         current^=1;
@@ -340,13 +393,19 @@ class cat_io_automaton_searcher
     {
 
     }
+
     void process(vector<int > input_str,vvi& output_strings)
     {
+
+        current=0;
+        next=1;
+        automaton_node_state & ns=states[current][machine.start_stat_id];
+        ns.add_state(automaton_process_state_hash(),automaton_process_state());
         for(int i=0;i<input_str.size();i++)
         {
             process_trans(input_str[i]);
         }
-        process_trans(cat_xfa_defines::CMD_NULL);
+        process_trans_null();
         set<int > output_hash;
         collect(output_hash,output_strings);
     }
