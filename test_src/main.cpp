@@ -16,6 +16,7 @@ public:
         s_trans.set_automaton(*transducer);
         dict=io_automaton_factory::make_ascii_dict("wordlist");
         s_dict.set_automaton(*dict);
+        cout<<"dict armed"<<endl;
 
     }
     int correct(string s)
@@ -24,6 +25,15 @@ public:
         vvi out;
         a.encode(s,in);
         out.clear();
+        s_dict.process(in,out);
+        if(out.size())
+        {
+            cout<<"spell check okay"<<endl;
+            return 0;
+        }
+        cout<<"spell error detected"<<endl;
+        cout<<"preparing proposals...."<<endl;
+
         s_trans.process(in,out);
         vvi out2;
         set<string >ans;
@@ -38,11 +48,15 @@ public:
                 ans.insert(s);
             }
         }
+        cout<<"found following proposals"<<endl;
+        cout << "-------------------------------------" << endl;
+
         for(const string &s_:ans)
         {
             cout<<s_<<endl;
         }
-        cout << "Hello World!" << endl;
+        cout << "-------------------------------------" << endl;
+
         return 0;
     }
 };
