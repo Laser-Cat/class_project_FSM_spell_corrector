@@ -30,3 +30,7 @@ HEADERS += \
     src/cat_fsm.h \
     src/cat_xfa.h \
     src/cat_abstract_automaton.h
+
+DISTFILES += \
+    bin/small_list \
+    bin/wordlist
