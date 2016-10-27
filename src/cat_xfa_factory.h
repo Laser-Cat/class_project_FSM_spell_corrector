@@ -152,7 +152,7 @@ struct io_automaton_factory
         {
             char_set.push_back(i);
         }*/
-        return make_transducer(char_set,1);
+        return make_transducer(char_set,2);
     }
 
 };

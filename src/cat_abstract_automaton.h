@@ -106,6 +106,7 @@ struct cat_io_automaton_cell:public cat_automaton_node
             next_ids.push_back(e.next_node_id);
             output.push_back(e.response);
         }
+        return true;
     }
     void collect(int op,vector<cat_automaton_edge>& ret)
     {
@@ -143,11 +144,7 @@ public:
         start_stat_id=0;
     }
 
-    cat_io_automaton operator |(const cat_io_automaton& m)const
-    {
-        cat_io_automaton ret_fsm;
-        cat_io_automaton_cell cell;
-    }
+
     int add_node()
     {
         cat_io_automaton_cell node;
@@ -237,6 +234,7 @@ struct automaton_process_state_hash
         s.hash%=cat_xfa_defines::HASH_FACTOR;
         s.hash+=character;
         s.hash%=cat_xfa_defines::HASH_FACTOR;
+        return s;
     }
 };
 
@@ -411,10 +409,6 @@ public:
         }
         active_states[next].clear();
     }
-    cat_io_automaton compose(cat_io_automaton& pre,cat_io_automaton& post)
-    {
-
-    }
 
     void process(vector<int > input_str,vvi& output_strings)
     {
@@ -435,5 +429,65 @@ public:
     }
 };
 
+//struct composer
+//{
+//    cat_io_automaton compose(cat_io_automaton& pre,cat_io_automaton& post,vector<int > charset)
+//    {
+//        cat_io_automaton new_machine;
+//        cat_io_automaton_searcher searcher_pre;
+//        cat_io_automaton_searcher searcher_post;
+//        searcher_pre.set_automaton(pre);
+//        searcher_post.set_automaton(post);
+//        new_machine.add_node();
+//        pii current_status,next_status;
+//        map<pii,int> visit;
+//        visit[current_status]=0;
+//        queue<pii> q;
+
+//        vector<int >possible_pre;
+//        vector<int >possible_post;
+
+//        vector<int >possible_post_response;
+//        current_status=make_pair(0,0);
+//        while(!q.empty())
+//        {
+//            current_status=q.front();
+//            q.pop();
+//            possible_pre.clear();
+//            possible_post.clear();
+//            cat_io_automaton_cell & current_pre=pre.nodes[current_status.first];
+//            cat_io_automaton_cell & current_post=pre.nodes[current_status.second];
+
+//            for(const pii &p:current_pre.op_dict.op_loc)
+//            {
+//                int op=p.first;
+//                int loc=p.second;
+//                cat_io_automaton_op & curent_pre_op=current_pre.ops[loc];
+//                for(cat_automaton_edge&e :curent_pre_op.out_going_edges)
+//                {
+//                    if(current_post.op_dict.find(e.response))
+//                    {
+//                        possible_post.clear();
+//                        possible_post_response.clear();
+//                        current_post.next(e.response,possible_post,possible_post_response);
+//                        for(int i=0;i<possible_post.size();i++)
+//                        {
+//                            pii next_node_des=make_pair(e.next_node_id,possible_post[i]);
+//                            if(visit.find(next_node_des)==visit.end())
+//                            {
+//                                visit[next_node_des]=new_machine.add_node();
+//                            }
+//                            int next_id=
+//                        }
+//                    }
+//                }
+//            }
+//        }
+
+
+
+//    }
+
+//};
 
 #endif // CAT_ABSTRACT_AUTOMATON_H
