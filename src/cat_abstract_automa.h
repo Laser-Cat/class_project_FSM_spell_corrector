@@ -8,12 +8,12 @@ protected:
     int id;
     bool is_accepted;
     vvi next_status;
-    mat<int ,int > next_status_locs;
+    map<int ,int > next_status_locs;
     /// this is quick, but you need to make sure no repeating
     /// element involved....
     int ___add_next(vi& array,int next)
     {
-        array.push_back(target);
+        array.push_back(next);
         return cat_xfa_defines::OKAY;
     }
     ///add assist ds to accelerate this~
@@ -21,9 +21,9 @@ protected:
 
     int __add_next(vi& array,int next)
     {
-        for(int next:default_next)
+        for(int _next:array)
         {
-            if(next==default_next)
+            if(_next==next)
             {
                 return cat_xfa_defines::OKAY;                 ;
             }
@@ -53,8 +53,11 @@ public:
     {
         if(next_status_locs.find(op)==next_status_locs.end())
         {
-            return __add_next(next_status_locs[op],next);
+            next_status_locs[op]=next_status.size();
+            next_status.push_back(vi());
+
         }
+        return __add_next(next_status[next_status_locs[op]],next);
     }
     int add_next(int op,vi & next_status)
     {
@@ -101,7 +104,8 @@ public:
         return cat_xfa_defines::OKAY;
 
     }
-    bool test()
+
+    int test()
     {
         return  is_accepted;
     }
@@ -124,17 +128,27 @@ protected:
         }
         status.clear();
     }
-    void init()
+    int init()
     {
         node_count=0;
+
         current_status=cat_xfa_defines::NOT_DEFINED;
         enterance_status=cat_xfa_defines::NOT_DEFINED;
-
+        int exec_status;
+        exec_status=add_node(exec_status);
+        if(exec_status!=cat_xfa_defines::OKAY)
+        {
+            return exec_status;
+        }
+        current_status=0;
+        enterance_status=0;
+        return cat_xfa_defines::OKAY;
     }
-    void reset()
+    int reset()
     {
         clear();
         init();
+        return cat_xfa_defines::OKAY;
     }
     int set_enterance_node(int node_id=0)
     {
@@ -143,17 +157,24 @@ protected:
             return cat_xfa_defines::INDEX_OUT_OF_BOUNDARY;
         }
         enterance_status=node_id;
+        return cat_xfa_defines::OKAY;
     }
-    int add_node()
+    int add_node(int & out_id)
     {
-        node_count++;
-        cat_abstract_automa_cell* new_cell=new cat_abstract_automa_cell(node_count);
+        out_id=cat_xfa_defines::NOT_DEFINED;
+        cat_abstract_automa_cell* new_cell=new cat_abstract_automa_cell;
+        new_cell->set_id(node_count);
+        new_cell->set_accepted(cat_xfa_defines::WRONG_ANSWER);
         status.push_back(new_cell);
+
+        out_id=node_count;
+        node_count++;
         return cat_xfa_defines::OKAY;
     }
     int add_operation(int op)
     {
         operaion_list.insert(op);
+        return cat_xfa_defines::OKAY;
     }
     int add_transfer(int sid,int op, vi& targets)
     {
@@ -186,17 +207,21 @@ protected:
             return cat_xfa_defines::UNKNOW_ERROR;
         }
     }
-    int test_accepted(int node_id=current_status)
+    int test_accepted(int node_id)
     {
         try
         {
             cat_abstract_automa_cell* tar=status.at(node_id);
-            return tar->is_accepted();
+            return tar->test();
         }
         catch(...)
         {
             return cat_xfa_defines::UNKNOW_ERROR;
         }
+    }
+    int test_accepted()
+    {
+        return test_accepted(current_status);
     }
     cat_abstract_automa_core()
     {

@@ -17,7 +17,8 @@ SOURCES += \
     src/cat_xfa_factory.cpp \
     src/cat_indexed_sparse_list.cpp \
     src/cat_fsm.cpp \
-    src/cat_xfa.cpp
+    src/cat_xfa.cpp \
+    src/cat_abstract_automaton.cpp
 TARGET=bin/xfa
 
 HEADERS += \
@@ -27,4 +28,5 @@ HEADERS += \
     src/cat_xfa_factory.h \
     src/cat_indexed_sparse_list.h \
     src/cat_fsm.h \
-    src/cat_xfa.h
+    src/cat_xfa.h \
+    src/cat_abstract_automaton.h
