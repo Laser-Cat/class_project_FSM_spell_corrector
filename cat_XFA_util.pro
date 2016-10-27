@@ -33,4 +33,5 @@ HEADERS += \
 
 DISTFILES += \
     bin/small_list \
-    bin/wordlist
+    bin/wordlist \
+    readme.md
