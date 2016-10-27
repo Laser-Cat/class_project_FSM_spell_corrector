@@ -13,6 +13,22 @@ class typo_prob
     }
 };
 
+struct codec_ascii
+{
+    void encode(const string& src,vi&dst)
+    {
+        dst.clear();
+        for(char c:src)
+            dst.push_back(c);
+    }
+    void decode(vi& src,string& dst)
+    {
+        dst="";
+        for(int c:src)
+            if(c!=cat_xfa_defines::CMD_NULL)
+            dst+=c;
+    }
+};
 class cat_abstract_automaton_factory
 {
 public:
@@ -82,6 +98,7 @@ struct io_automaton_factory
             {
                 next_id=next[0];
             }
+            current_id=next_id;
         }
         s.get_machine()->set_accept(current_id);
     }
@@ -97,6 +114,31 @@ struct io_automaton_factory
             add_to_dict(s,strings[i]);
         }
         *a=*(s.get_machine());
+        return a;
+    }
+    static cat_io_automaton* make_ascii_dict(vector<string >& words)
+    {
+        vvi _words;
+        codec_ascii c;
+        for(string &s:words)
+        {
+            vi tmp;
+            c.encode(s,tmp);
+            _words.push_back(tmp);
+        }
+        return make_dict(_words);
+    }
+    static cat_io_automaton* make_ascii_dict(string word_path)
+    {
+        FILE* fp=fopen(word_path.c_str(),"r");
+        vector<string > words;
+        char buf[1000];
+        while(fscanf(fp,"%s",buf)==1)
+        {
+            words.push_back(buf);
+        }
+        return make_ascii_dict(words);
+
     }
     static cat_io_automaton* make_ascii_transducer()
     {
@@ -110,25 +152,10 @@ struct io_automaton_factory
         {
             char_set.push_back(i);
         }*/
-        return make_transducer(char_set,2);
+        return make_transducer(char_set,1);
     }
+
 };
 
-struct codec_ascii
-{
-    void encode(const string& src,vi&dst)
-    {
-        dst.clear();
-        for(char c:src)
-            dst.push_back(c);
-    }
-    void decode(vi& src,string& dst)
-    {
-        dst="";
-        for(int c:src)
-            if(c!=cat_xfa_defines::CMD_NULL)
-            dst+=c;
-    }
-};
 
 #endif // CAT_XFA_FACTORY_H

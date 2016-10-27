@@ -297,6 +297,7 @@ class cat_io_automaton_searcher
     vector<vector<int > > accepted_str;
 
     vector <automaton_node_state> states[2];
+    set<int > active_states[2];
     cat_io_automaton machine;
     int current,next;
 public:
@@ -339,6 +340,7 @@ public:
                {
                    continue;
                }
+               active_states[target_stat].insert(next_nodes[i]);
                next_node_status.add_state(next_hash,current_process_state.grow(outputs[i]));
            }
        }
@@ -364,20 +366,20 @@ public:
 
     void process_trans_null()
     {
-        for(int i=0;i<machine.node_count;i++)
+        for(int i:active_states[current])
         {
             process_trans(i,cat_xfa_defines::CMD_NULL);
         }
     }
     void process_trans(int character)
     {
+
         if(character!=cat_xfa_defines::CMD_NULL)
-        for(int i=0;i<machine.node_count;i++)
+        for(int i:active_states[current])
         {
             process_trans(i,cat_xfa_defines::CMD_NULL);
         }
-
-        for(int i=0;i<machine.node_count;i++)
+        for(int i:active_states[current])
         {
             process_trans(i,character);
         }
@@ -387,7 +389,9 @@ public:
         {
             automaton_node_state &node_state=states[next][i];
             node_state.clear();
+
         }
+        active_states[next].clear();
     }
     cat_io_automaton compose(cat_io_automaton& pre,cat_io_automaton& post)
     {
@@ -401,6 +405,7 @@ public:
         next=1;
         automaton_node_state & ns=states[current][machine.start_stat_id];
         ns.add_state(automaton_process_state_hash(),automaton_process_state());
+        active_states[current].insert(0);
         for(int i=0;i<input_str.size();i++)
         {
             process_trans(input_str[i]);
