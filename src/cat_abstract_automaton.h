@@ -295,9 +295,9 @@ struct automaton_node_state
 class cat_io_automaton_searcher
 {
     vector<vector<int > > accepted_str;
-
     vector <automaton_node_state> states[2];
     set<int > active_states[2];
+    set<int > active_accept;
     cat_io_automaton machine;
     int current,next;
 public:
@@ -348,7 +348,7 @@ public:
 
     void collect(set<int >& output_hash,vector<vector<int > >&outputs)
     {
-        for(int t:machine.accept_nodes)
+        for(int t:active_accept)
         {
              automaton_node_state &node_state=states[current][t];
              for(int i=0;i<node_state.states.size();i++)
@@ -363,13 +363,31 @@ public:
              }
         }
     }
+    void finish_up()
+    {
 
+        for(int i:active_states[current])
+        {
+            automaton_node_state& ns=states[current][i];
+            ns.clear();
+
+        }
+        active_accept.clear();
+        active_states[0].clear();
+        active_states[1].clear();
+    }
     void process_trans_null()
     {
         for(int i:active_states[current])
         {
             process_trans(i,cat_xfa_defines::CMD_NULL);
+            cat_io_automaton_cell &c=machine.nodes[i];
+            if(c.is_accepted)
+            {
+                active_accept.insert(i);
+            }
         }
+
     }
     void process_trans(int character)
     {
@@ -385,7 +403,7 @@ public:
         }
         current^=1;
         next^=1;
-        for(int i=0;i<machine.node_count;i++)
+        for(int i:active_states[next])
         {
             automaton_node_state &node_state=states[next][i];
             node_state.clear();
@@ -413,6 +431,7 @@ public:
         process_trans_null();
         set<int > output_hash;
         collect(output_hash,output_strings);
+        finish_up();
     }
 };
 
